@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NER-SHIELD — Logistics & Accessibility Intelligence Platform</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+  :root{
+    --bg:#0a1220;
+    --panel:#0f1b30;
+    --card:#132340;
+    --card-2:#0e1b32;
+    --border:#213655;
+    --border-soft:#1a2c48;
+    --text:#e7edf7;
+    --text-dim:#93a4c2;
+    --text-faint:#5d7096;
+    --blue:#2f8fe0;
+    --blue-dim:#1c4a78;
+    --green:#25b876;
+    --amber:#e0a52f;
+    --red:#e0524a;
+    --radius:12px;
+    --safe-t:env(safe-area-inset-top,0px);
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+
+  /* ---------- app shell ---------- */
+  .app{
+    display:grid;
+    grid-template-columns:68px 1fr;
+    height:100%;
+    min-height:100vh;
+  }
+  .rail{
+    background:var(--panel);
+    border-right:1px solid var(--border-soft);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:14px 0;
+    gap:6px;
+    padding-top:calc(14px + var(--safe-t));
+  }
+  .rail .logo{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(145deg,var(--blue),#1a5f9e);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:13px;color:#fff;margin-bottom:14px;
+    letter-spacing:-0.02em;
+  }
+  .rail-btn{
+    width:44px;height:44px;border-radius:10px;border:none;background:transparent;
+    color:var(--text-faint);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;position:relative;
+  }
+  .rail-btn svg{width:20px;height:20px;}
+  .rail-btn.active{background:var(--card);color:var(--blue);}
+  .rail-btn:hover{color:var(--text);}
+  .rail-btn .dot{
+    position:absolute;top:6px;right:8px;width:7px;height:7px;border-radius:50%;
+    background:var(--red);display:none;
+  }
+  .rail-btn .dot.show{display:block;}
+
+  .main{
+    display:flex;flex-direction:column;
+    min-width:0;
+    max-height:100vh;
+    overflow:hidden;
+  }
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    padding:16px 22px;
+    padding-top:calc(16px + var(--safe-t));
+    display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid var(--border-soft);
+    flex-shrink:0;
+    gap:12px;
+  }
+  .topbar h1{font-size:16px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+  .topbar .sub{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+  .status-pill{
+    display:flex;align-items:center;gap:6px;
+    font-size:11.5px;color:var(--text-dim);
+    background:var(--card);border:1px solid var(--border-soft);
+    padding:6px 10px;border-radius:20px;white-space:nowrap;
+  }
+  .status-pill .led{width:7px;height:7px;border-radius:50%;background:var(--text-faint);}
+  .status-pill.ok .led{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .status-pill.bad .led{background:var(--red);box-shadow:0 0 6px var(--red);}
+
+  .scroll-area{
+    flex:1;
+    overflow-y:auto;
+    padding:18px 22px calc(24px + var(--safe-b));
+  }
+
+  /* ---------- stat cards ---------- */
+  .stats-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .stat-card{
+    background:var(--card);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+  .stat-card .label{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;}
+  .stat-card .value{font-size:24px;font-weight:700;margin-top:6px;letter-spacing:-0.02em;}
+  .stat-card .value.green{color:var(--green);}
+  .stat-card .value.amber{color:var(--amber);}
+  .stat-card .value.red{color:var(--red);}
+  .stat-card .foot{font-size:11px;color:var(--text-dim);margin-top:3px;}
+
+  /* ---------- layout grid ---------- */
+  .content-grid{
+    display:grid;
+    grid-template-columns:1fr 320px;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  .panel{
+    background:var(--card);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .panel-head{
+    padding:12px 16px;
+    border-bottom:1px solid var(--border-soft);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .panel-head h2{font-size:12.5px;margin:0;text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);font-weight:700;}
+  .panel-body{padding:14px 16px;}
+
+  .map-wrap{position:relative;height:480px;}
+  #map{height:100%;width:100%;}
+  .legend{
+    position:absolute;bottom:14px;left:14px;
+    background:rgba(15,27,48,.92);
+    border:1px solid var(--border-soft);
+    padding:8px 12px;border-radius:8px;font-size:11px;z-index:1000;
+    backdrop-filter:blur(4px);
+  }
+  .legend div{display:flex;align-items:center;gap:6px;margin:3px 0;color:var(--text-dim);}
+  .legend .dot{width:9px;height:9px;border-radius:50%;}
+
+  .alerts-list{max-height:480px;overflow-y:auto;}
+  .alert-item{
+    padding:10px 16px;border-bottom:1px solid var(--border-soft);
+    display:flex;align-items:flex-start;gap:10px;font-size:12.5px;
+  }
+  .alert-item:last-child{border-bottom:none;}
+  .alert-item .bar{width:3px;align-self:stretch;border-radius:2px;flex-shrink:0;}
+  .alert-item .body{flex:1;min-width:0;}
+  .alert-item .route{font-weight:600;color:var(--text);}
+  .alert-item .meta{color:var(--text-faint);font-size:11px;margin-top:2px;}
+  .risk-badge{
+    padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;color:#fff;
+    min-width:30px;text-align:center;flex-shrink:0;
+  }
+  .empty-note{padding:20px 16px;color:var(--text-faint);font-size:12.5px;text-align:center;}
+
+  /* ---------- tools row ---------- */
+  .tools-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+  label{font-size:11.5px;color:var(--text-dim);display:block;margin-bottom:4px;margin-top:10px;}
+  label:first-of-type{margin-top:0;}
+  input,select,textarea{
+    width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;
+    font-size:13px;font-family:inherit;background:var(--card-2);color:var(--text);
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);}
+  textarea{resize:vertical;}
+  button{
+    margin-top:14px;width:100%;padding:10px;border:none;border-radius:8px;
+    font-size:13px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;
+    letter-spacing:-0.01em;
+  }
+  button:hover{background:#2379c4;}
+  button.secondary{background:var(--card-2);color:var(--text);border:1px solid var(--border);}
+  button.secondary:hover{border-color:var(--blue);color:var(--blue);}
+  button:disabled{opacity:.6;cursor:default;}
+
+  #result-box,#incident-status,#weather-status{
+    font-size:12px;margin-top:10px;padding:10px;border-radius:8px;
+    background:var(--card-2);border:1px solid var(--border-soft);
+    display:none;white-space:pre-wrap;line-height:1.55;color:var(--text-dim);
+    max-height:200px;overflow-y:auto;
+  }
+  #result-box.show,#incident-status.show,#weather-status.show{display:block;}
+
+  /* ---------- mobile bottom nav ---------- */
+  .bottom-nav{display:none;}
+
+  /* ================= MOBILE ================= */
+  @media (max-width:860px){
+    .app{grid-template-columns:1fr;}
+    .rail{display:none;}
+    .main{max-height:none;}
+    .scroll-area{padding:14px 14px calc(90px + var(--safe-b));}
+    .topbar{padding:14px 16px;padding-top:calc(14px + var(--safe-t));}
+    .topbar h1{font-size:14.5px;}
+
+    .stats-row{grid-template-columns:repeat(2,1fr);}
+
+    .content-grid{grid-template-columns:1fr;}
+    .map-wrap{height:340px;}
+    .alerts-list{max-height:none;}
+
+    .tools-grid{grid-template-columns:1fr;}
+
+    /* tab sections */
+    .section{display:none;}
+    .section.active{display:block;}
+
+    .bottom-nav{
+      display:flex;
+      position:fixed;left:0;right:0;bottom:0;
+      background:var(--panel);border-top:1px solid var(--border-soft);
+      padding:8px 6px calc(8px + var(--safe-b));
+      justify-content:space-around;
+      z-index:1200;
+    }
+    .bn-btn{
+      background:none;border:none;color:var(--text-faint);
+      display:flex;flex-direction:column;align-items:center;gap:3px;
+      font-size:10px;padding:4px 10px;border-radius:10px;cursor:pointer;
+      margin:0;width:auto;font-weight:600;
+    }
+    .bn-btn svg{width:19px;height:19px;}
+    .bn-btn.active{color:var(--blue);}
+  }
+  @media (min-width:861px){
+    .section{display:block !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- desktop icon rail -->
+  <nav class="rail">
+    <div class="logo">NS</div>
+    <button class="rail-btn active" data-target="sec-map" title="Live Map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
+    </button>
+    <button class="rail-btn" data-target="sec-alerts" title="Risk & Alerts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>
+      <span class="dot" id="rail-alert-dot"></span>
+    </button>
+    <button class="rail-btn" data-target="sec-route" title="Route Optimization">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><path d="M8 18h5a4 4 0 0 0 4-4V9"/></svg>
+    </button>
+    <button class="rail-btn" data-target="sec-report" title="Field Reporting">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+    </button>
+  </nav>
+
+  <div class="main">
+
+    <header class="topbar">
+      <div>
+        <h1>NER-SHIELD</h1>
+        <div class="sub">Logistics &amp; Accessibility Intelligence · Team OMNI · SIH 2026</div>
+      </div>
+      <div class="status-pill" id="header-status"><span class="led"></span><span>connecting…</span></div>
+    </header>
+
+    <div class="scroll-area">
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="label">Road links monitored</div>
+          <div class="value" id="stat-roads">—</div>
+          <div class="foot" id="stat-roads-foot">&nbsp;</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Towns connected</div>
+          <div class="value" id="stat-towns">—</div>
+          <div class="foot">Seeded NER network</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">High-risk alerts</div>
+          <div class="value red" id="stat-high">—</div>
+          <div class="foot">Risk score ≥ 60</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Avg network risk</div>
+          <div class="value amber" id="stat-avg">—</div>
+          <div class="foot">out of 100</div>
+        </div>
+      </div>
+
+      <!-- MAP -->
+      <section class="section active" id="sec-map">
+        <div class="content-grid">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Live risk map</h2>
+              <button class="secondary" id="btn-recalc" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;">Recalculate</button>
+            </div>
+            <div class="map-wrap">
+              <div id="map"></div>
+              <div class="legend">
+                <div><span class="dot" style="background:#25b876"></span>Low risk (0–30)</div>
+                <div><span class="dot" style="background:#e0a52f"></span>Medium (30–60)</div>
+                <div><span class="dot" style="background:#e0524a"></span>High (60–100)</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Live alerts</h2></div>
+            <div class="alerts-list" id="risk-list"><div class="empty-note">Loading risk data…</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALERTS (mobile tab reuses same list, shown full width) -->
+      <section class="section" id="sec-alerts">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Risk &amp; alerts — full road list</h2>
+            <button class="secondary" id="btn-recalc-2" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;">Recalculate</button>
+          </div>
+          <div class="alerts-list" id="risk-list-2" style="max-height:none;"><div class="empty-note">Loading risk data…</div></div>
+        </div>
+      </section>
+
+      <!-- ROUTE -->
+      <section class="section" id="sec-route">
+        <div class="panel">
+          <div class="panel-head"><h2>Route optimization</h2></div>
+          <div class="panel-body">
+            <label>From</label>
+            <select id="route-from"></select>
+            <label>To</label>
+            <select id="route-to"></select>
+            <button id="btn-route">Find safest route</button>
+            <div id="result-box"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORT / DATA INGEST -->
+      <section class="section" id="sec-report">
+        <div class="tools-grid">
+          <div class="panel">
+            <div class="panel-head"><h2>Field incident report</h2></div>
+            <div class="panel-body">
+              <label>Incident type</label>
+              <select id="incident-type">
+                <option value="landslide">Landslide</option>
+                <option value="flood">Flood</option>
+                <option value="road_damage">Road damage</option>
+                <option value="congestion">Congestion</option>
+              </select>
+              <label>Latitude</label>
+              <input id="incident-lat" type="number" step="0.0001" value="25.85" />
+              <label>Longitude</label>
+              <input id="incident-lon" type="number" step="0.0001" value="93.60" />
+              <label>Description</label>
+              <textarea id="incident-desc" rows="2">Road blocked near Diphu-Dimapur stretch</textarea>
+              <button id="btn-incident" class="secondary">Submit report</button>
+              <div id="incident-status"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Pull live weather</h2></div>
+            <div class="panel-body">
+              <label>Latitude</label>
+              <input id="weather-lat" type="number" step="0.0001" value="25.9091" />
+              <label>Longitude</label>
+              <input id="weather-lon" type="number" step="0.0001" value="93.7267" />
+              <label>District</label>
+              <input id="weather-district" type="text" value="Dimapur" />
+              <button id="btn-weather" class="secondary">Fetch &amp; store weather</button>
+              <div id="weather-status"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- mobile bottom nav -->
+  <nav class="bottom-nav">
+    <button class="bn-btn active" data-target="sec-map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
+      Map
+    </button>
+    <button class="bn-btn" data-target="sec-alerts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>
+      Alerts
+    </button>
+    <button class="bn-btn" data-target="sec-route">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><path d="M8 18h5a4 4 0 0 0 4-4V9"/></svg>
+      Route
+    </button>
+    <button class="bn-btn" data-target="sec-report">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+      Report
+    </button>
+  </nav>
+
+</div>
+
+<script>
+const API = "";  // same origin
+
+const map = L.map('map', { zoomControl: true }).setView([25.9, 93.5], 7);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO',
+  maxZoom: 12,
+  subdomains: 'abcd',
+}).addTo(map);
+
+let edgeLayers = [];
+let nodeCoords = {};
+
+function riskColor(risk) {
+  if (risk < 30) return '#25b876';
+  if (risk < 60) return '#e0a52f';
+  return '#e0524a';
+}
+
+function setNavTarget(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === id));
+  document.querySelectorAll('.rail-btn, .bn-btn').forEach(b => b.classList.toggle('active', b.dataset.target === id));
+}
+document.querySelectorAll('.rail-btn, .bn-btn').forEach(btn => {
+  btn.addEventListener('click', () => setNavTarget(btn.dataset.target));
+});
+
+function renderAlertItem(e) {
+  const div = document.createElement('div');
+  div.className = 'alert-item';
+  const color = riskColor(e.current_risk);
+  div.innerHTML = `
+    <span class="bar" style="background:${color}"></span>
+    <div class="body">
+      <div class="route">${e.from_name} → ${e.to_name}</div>
+      <div class="meta">${e.current_risk >= 60 ? 'High risk' : e.current_risk >= 30 ? 'Medium risk' : 'Low risk'}</div>
+    </div>
+    <span class="risk-badge" style="background:${color}">${Math.round(e.current_risk)}</span>`;
+  return div;
+}
+
+async function loadNodesAndDraw() {
+  const res = await fetch(`${API}/risk/edges`);
+  if (!res.ok) return;
+  const edges = await res.json();
+
+  edgeLayers.forEach(l => map.removeLayer(l));
+  edgeLayers = [];
+
+  const list1 = document.getElementById('risk-list');
+  const list2 = document.getElementById('risk-list-2');
+  list1.innerHTML = '';
+  list2.innerHTML = '';
+
+  if (edges.length === 0) {
+    list1.innerHTML = '<div class="empty-note">No risk data yet.</div>';
+    list2.innerHTML = '<div class="empty-note">No risk data yet.</div>';
+  } else {
+    edges.forEach(e => {
+      list1.appendChild(renderAlertItem(e));
+      list2.appendChild(renderAlertItem(e));
+    });
+  }
+
+  // stats
+  const total = edges.length;
+  const high = edges.filter(e => e.current_risk >= 60).length;
+  const avg = total ? Math.round(edges.reduce((s, e) => s + e.current_risk, 0) / total) : 0;
+  document.getElementById('stat-roads').textContent = total;
+  document.getElementById('stat-high').textContent = high;
+  document.getElementById('stat-avg').textContent = avg;
+  document.getElementById('rail-alert-dot').classList.toggle('show', high > 0);
+
+  // draw edges on map if coordinates are known
+  edges.forEach(e => {
+    const from = nodeCoords[e.from_name];
+    const to = nodeCoords[e.to_name];
+    if (from && to) {
+      const line = L.polyline([from, to], {
+        color: riskColor(e.current_risk),
+        weight: 4,
+        opacity: 0.85,
+      }).addTo(map).bindPopup(`<b>${e.from_name} → ${e.to_name}</b><br>Risk: ${Math.round(e.current_risk)}`);
+      edgeLayers.push(line);
+    }
+  });
+}
+
+async function loadGraphOnMap() {
+  const nodesRes = await fetch(`${API}/nodes`);
+  const nodeNames = nodesRes.ok ? await nodesRes.json() : [];
+
+  document.getElementById('stat-towns').textContent = nodeNames.length;
+
+  const fromSel = document.getElementById('route-from');
+  const toSel = document.getElementById('route-to');
+  fromSel.innerHTML = '';
+  toSel.innerHTML = '';
+  nodeNames.forEach(name => {
+    fromSel.innerHTML += `<option value="${name}">${name}</option>`;
+    toSel.innerHTML += `<option value="${name}">${name}</option>`;
+  });
+  if (nodeNames.length > 1) toSel.selectedIndex = 1;
+}
+
+async function recalc(btn) {
+  const original = btn.textContent;
+  btn.textContent = 'Recalculating…';
+  btn.disabled = true;
+  await fetch(`${API}/risk/recalculate`, { method: 'POST' });
+  await loadNodesAndDraw();
+  btn.textContent = original;
+  btn.disabled = false;
+}
+document.getElementById('btn-recalc').addEventListener('click', (e) => recalc(e.target));
+document.getElementById('btn-recalc-2').addEventListener('click', (e) => recalc(e.target));
+
+document.getElementById('btn-route').addEventListener('click', async () => {
+  const from_ = document.getElementById('route-from').value;
+  const to = document.getElementById('route-to').value;
+  const box = document.getElementById('result-box');
+  box.className = 'show';
+  box.textContent = 'Finding route…';
+
+  const res = await fetch(`${API}/route?from_=${encodeURIComponent(from_)}&to=${encodeURIComponent(to)}`);
+  const data = await res.json();
+
+  if (!res.ok) {
+    box.textContent = 'Error: ' + (data.detail || 'could not find route');
+    return;
+  }
+
+  box.textContent =
+    `Route: ${data.path.join(' → ')}\n` +
+    `Total distance: ${data.total_distance_km} km\n` +
+    `Average risk: ${data.average_risk}\n\n` +
+    data.segments.map(s => `  ${s.from} → ${s.to} (${s.road_name}, ${s.distance_km}km, risk ${s.risk})`).join('\n');
+});
+
+document.getElementById('btn-incident').addEventListener('click', async () => {
+  const status = document.getElementById('incident-status');
+  status.className = 'show';
+  status.textContent = 'Submitting…';
+
+  const form = new FormData();
+  form.append('incident_type', document.getElementById('incident-type').value);
+  form.append('lat', document.getElementById('incident-lat').value);
+  form.append('lon', document.getElementById('incident-lon').value);
+  form.append('description', document.getElementById('incident-desc').value);
+
+  const res = await fetch(`${API}/incident-report`, { method: 'POST', body: form });
+  const data = await res.json();
+
+  if (!res.ok) {
+    status.textContent = 'Error: ' + JSON.stringify(data.detail);
+    return;
+  }
+  status.textContent = `Report #${data.incident_id} saved. Risk engine re-ran automatically.`;
+  await loadNodesAndDraw();
+});
+
+document.getElementById('btn-weather').addEventListener('click', async () => {
+  const status = document.getElementById('weather-status');
+  status.className = 'show';
+  status.textContent = 'Fetching from Open-Meteo…';
+
+  const res = await fetch(`${API}/ingest/weather`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      lat: parseFloat(document.getElementById('weather-lat').value),
+      lon: parseFloat(document.getElementById('weather-lon').value),
+      district: document.getElementById('weather-district').value,
+    }),
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    status.textContent = 'Error: ' + JSON.stringify(data.detail);
+    return;
+  }
+  status.textContent = `Stored: ${data.rainfall_mm}mm at ${data.district}. Risk engine re-ran automatically.`;
+  await loadNodesAndDraw();
+});
+
+async function init() {
+  const headerStatus = document.getElementById('header-status');
+  try {
+    const health = await fetch(`${API}/health`);
+    if (health.ok) {
+      headerStatus.classList.add('ok');
+      headerStatus.querySelector('span:last-child').textContent = 'connected';
+    } else {
+      headerStatus.classList.add('bad');
+      headerStatus.querySelector('span:last-child').textContent = 'backend unreachable';
+    }
+  } catch (e) {
+    headerStatus.classList.add('bad');
+    headerStatus.querySelector('span:last-child').textContent = 'backend unreachable';
+  }
+
+  // fetch node coordinates for drawing edges on the map (best-effort; skips silently if endpoint absent)
+  try {
+    const res = await fetch(`${API}/nodes/coordinates`);
+    if (res.ok) {
+      const coords = await res.json();
+      coords.forEach(n => { nodeCoords[n.name] = [n.lat, n.lon]; });
+    }
+  } catch (e) { /* endpoint may not exist yet — edges just won't draw on map */ }
+
+  await loadGraphOnMap();
+  await loadNodesAndDraw();
+}
+
+init();
+</script>
+
+</body>
+</html>

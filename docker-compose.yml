@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: sih26002_postgis
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sih26002
+    ports:
+      - "5432:5432"
+    volumes:
+      - sih26002_pgdata:/var/lib/postgresql/data
+
+volumes:
+  sih26002_pgdata:
