@@ -26,6 +26,19 @@
     --safe-t:env(safe-area-inset-top,0px);
     --safe-b:env(safe-area-inset-bottom,0px);
   }
+  html[data-theme="light"]{
+    --bg:#f4f6fb;
+    --panel:#ffffff;
+    --card:#ffffff;
+    --card-2:#eef1f8;
+    --border:#d7dfec;
+    --border-soft:#e3e8f2;
+    --text:#16233d;
+    --text-dim:#48566f;
+    --text-faint:#8896ac;
+  }
+  html[data-theme="light"] .legend{background:rgba(255,255,255,.92);}
+  html[data-theme="light"] #splash{background:linear-gradient(180deg,#0a1220,#0d1830 60%,#0a1220) !important;}
   *{box-sizing:border-box;}
   html,body{height:100%;}
   body{
@@ -260,23 +273,35 @@
 </head>
 <body>
 
+<div id="splash" style="position:fixed;inset:0;z-index:3000;background:linear-gradient(180deg,#0a1220,#0d1830 60%,#0a1220);display:flex;flex-direction:column;justify-content:flex-end;padding:40px 24px calc(40px + var(--safe-b));">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;">
+    <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(145deg,var(--blue),#1a5f9e);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;margin-bottom:18px;">NS</div>
+    <h1 style="font-size:26px;margin:0 0 8px;">NER-SHIELD</h1>
+    <div style="color:var(--text-dim);font-size:14px;max-width:260px;">Logistics Intelligence for a More Connected North East</div>
+  </div>
+  <button onclick="document.getElementById('splash').style.display='none'">Continue as Guest</button>
+</div>
+
 <div class="app">
 
   <!-- desktop icon rail -->
   <nav class="rail">
     <div class="logo">NS</div>
-    <button class="rail-btn active" data-target="sec-map" title="Live Map">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
-    </button>
-    <button class="rail-btn" data-target="sec-alerts" title="Risk & Alerts">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>
+    <button class="rail-btn active" data-target="sec-overview" title="Overview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 4l9 7"/><path d="M5 10v9h14v-9"/></svg>
       <span class="dot" id="rail-alert-dot"></span>
+    </button>
+    <button class="rail-btn" data-target="sec-map" title="Live Map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
     </button>
     <button class="rail-btn" data-target="sec-route" title="Route Optimization">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><path d="M8 18h5a4 4 0 0 0 4-4V9"/></svg>
     </button>
     <button class="rail-btn" data-target="sec-report" title="Field Reporting">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+    </button>
+    <button class="rail-btn" data-target="sec-more" title="More">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
     </button>
   </nav>
 
@@ -287,7 +312,10 @@
         <h1>NER-SHIELD</h1>
         <div class="sub">Logistics &amp; Accessibility Intelligence · Team OMNI · SIH 2026</div>
       </div>
-      <div class="status-pill" id="header-status"><span class="led"></span><span>connecting…</span></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="theme-toggle" class="secondary" style="margin:0;width:auto;padding:6px 10px;font-size:11.5px;">🌙 Dark</button>
+        <div class="status-pill" id="header-status"><span class="led"></span><span>connecting…</span></div>
+      </div>
     </header>
 
     <div class="scroll-area">
@@ -315,8 +343,23 @@
         </div>
       </div>
 
+      <!-- OVERVIEW (default landing tab) -->
+      <section class="section active" id="sec-overview">
+        <div style="margin-bottom:14px;">
+          <div style="font-size:15px;font-weight:700;">Hello, Officer</div>
+          <div style="font-size:12px;color:var(--text-faint);">Stay informed, keep the region moving.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Road status</h2>
+            <button class="secondary" id="btn-recalc-2" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;">Recalculate</button>
+          </div>
+          <div class="alerts-list" id="risk-list-2" style="max-height:none;"><div class="empty-note">Loading risk data…</div></div>
+        </div>
+      </section>
+
       <!-- MAP -->
-      <section class="section active" id="sec-map">
+      <section class="section" id="sec-map">
         <div class="content-grid">
           <div class="panel">
             <div class="panel-head">
@@ -336,17 +379,6 @@
             <div class="panel-head"><h2>Live alerts</h2></div>
             <div class="alerts-list" id="risk-list"><div class="empty-note">Loading risk data…</div></div>
           </div>
-        </div>
-      </section>
-
-      <!-- ALERTS (mobile tab reuses same list, shown full width) -->
-      <section class="section" id="sec-alerts">
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Risk &amp; alerts — full road list</h2>
-            <button class="secondary" id="btn-recalc-2" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;">Recalculate</button>
-          </div>
-          <div class="alerts-list" id="risk-list-2" style="max-height:none;"><div class="empty-note">Loading risk data…</div></div>
         </div>
       </section>
 
@@ -384,6 +416,8 @@
               <input id="incident-lon" type="number" step="0.0001" value="93.60" />
               <label>Description</label>
               <textarea id="incident-desc" rows="2">Road blocked near Diphu-Dimapur stretch</textarea>
+              <label>Photo (optional)</label>
+              <input id="incident-photo" type="file" accept="image/*" capture="environment" />
               <button id="btn-incident" class="secondary">Submit report</button>
               <div id="incident-status"></div>
             </div>
@@ -405,18 +439,39 @@
         </div>
       </section>
 
+      <!-- MORE -->
+      <section class="section" id="sec-more">
+        <div class="panel" style="margin-bottom:14px;">
+          <div class="panel-head"><h2>Vehicle tracking</h2></div>
+          <div class="panel-body">
+            <label>Vehicle ID</label>
+            <input id="track-vehicle-id" type="text" placeholder="e.g. AS-01-AB-1234" value="AS-01-AB-1234" />
+            <button id="btn-track" class="secondary">Load recent pings</button>
+            <button id="btn-simulate-ping" class="secondary" style="margin-top:8px;">Simulate a ping (demo)</button>
+            <div id="track-status"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Profile</h2></div>
+          <div class="panel-body" style="font-size:12.5px;color:var(--text-dim);">
+            Field Officer · Guest session<br/>
+            <span style="color:var(--text-faint);">Login, saved locations and offline sync aren't wired to a backend yet — this build focuses on the live risk/route/report pipeline.</span>
+          </div>
+        </div>
+      </section>
+
     </div>
   </div>
 
   <!-- mobile bottom nav -->
   <nav class="bottom-nav">
-    <button class="bn-btn active" data-target="sec-map">
+    <button class="bn-btn active" data-target="sec-overview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11 12 4l9 7"/><path d="M5 10v9h14v-9"/></svg>
+      Overview
+    </button>
+    <button class="bn-btn" data-target="sec-map">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
       Map
-    </button>
-    <button class="bn-btn" data-target="sec-alerts">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>
-      Alerts
     </button>
     <button class="bn-btn" data-target="sec-route">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><path d="M8 18h5a4 4 0 0 0 4-4V9"/></svg>
@@ -426,6 +481,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
       Report
     </button>
+    <button class="bn-btn" data-target="sec-more">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
+      More
+    </button>
   </nav>
 
 </div>
@@ -434,11 +493,32 @@
 const API = "";  // same origin
 
 const map = L.map('map', { zoomControl: true }).setView([25.9, 93.5], 7);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO',
-  maxZoom: 12,
-  subdomains: 'abcd',
-}).addTo(map);
+let tileLayer = null;
+function setMapTheme(theme) {
+  if (tileLayer) map.removeLayer(tileLayer);
+  const url = theme === 'light'
+    ? 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+    : 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+  tileLayer = L.tileLayer(url, {
+    attribution: '&copy; Esri &copy; OpenStreetMap contributors',
+    maxZoom: 12,
+  }).addTo(map);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('theme-toggle').textContent = theme === 'light' ? '☀️ Light' : '🌙 Dark';
+  setMapTheme(theme);
+  localStorage.setItem('ner-shield-theme', theme);
+}
+
+const savedTheme = localStorage.getItem('ner-shield-theme') || 'dark';
+applyTheme(savedTheme);
+
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  applyTheme(current === 'light' ? 'dark' : 'light');
+});
 
 let edgeLayers = [];
 let nodeCoords = {};
@@ -452,6 +532,9 @@ function riskColor(risk) {
 function setNavTarget(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === id));
   document.querySelectorAll('.rail-btn, .bn-btn').forEach(b => b.classList.toggle('active', b.dataset.target === id));
+  if (id === 'sec-map') {
+    setTimeout(() => map.invalidateSize(), 150);
+  }
 }
 document.querySelectorAll('.rail-btn, .bn-btn').forEach(btn => {
   btn.addEventListener('click', () => setNavTarget(btn.dataset.target));
@@ -579,6 +662,8 @@ document.getElementById('btn-incident').addEventListener('click', async () => {
   form.append('lat', document.getElementById('incident-lat').value);
   form.append('lon', document.getElementById('incident-lon').value);
   form.append('description', document.getElementById('incident-desc').value);
+  const photoFile = document.getElementById('incident-photo').files[0];
+  if (photoFile) form.append('photo', photoFile);
 
   const res = await fetch(`${API}/incident-report`, { method: 'POST', body: form });
   const data = await res.json();
@@ -613,6 +698,40 @@ document.getElementById('btn-weather').addEventListener('click', async () => {
   }
   status.textContent = `Stored: ${data.rainfall_mm}mm at ${data.district}. Risk engine re-ran automatically.`;
   await loadNodesAndDraw();
+});
+
+document.getElementById('btn-track').addEventListener('click', async () => {
+  const id = document.getElementById('track-vehicle-id').value.trim();
+  const status = document.getElementById('track-status');
+  status.className = 'show';
+  if (!id) { status.textContent = 'Enter a vehicle ID first.'; return; }
+  status.textContent = 'Loading…';
+  const res = await fetch(`${API}/gps-pings/${encodeURIComponent(id)}`);
+  const data = await res.json();
+  if (!res.ok) { status.textContent = 'Error: ' + JSON.stringify(data.detail); return; }
+  if (!data.pings.length) { status.textContent = `No pings yet for ${id}. Try "Simulate a ping" below.`; return; }
+  status.textContent = data.pings.map(p =>
+    `${p.recorded_at}  •  ${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}  •  ${p.speed ?? '—'} km/h`
+  ).join('\n');
+});
+
+document.getElementById('btn-simulate-ping').addEventListener('click', async () => {
+  const id = document.getElementById('track-vehicle-id').value.trim() || 'DEMO-VEHICLE';
+  const status = document.getElementById('track-status');
+  status.className = 'show';
+  status.textContent = 'Sending test ping…';
+  const res = await fetch(`${API}/gps-ping`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      vehicle_id: id,
+      lat: 25.9 + (Math.random() - 0.5) * 0.4,
+      lon: 93.5 + (Math.random() - 0.5) * 0.4,
+      speed: Math.round(20 + Math.random() * 40),
+    }),
+  });
+  const data = await res.json();
+  status.textContent = res.ok ? 'Ping recorded. Click "Load recent pings" to see it.' : 'Error: ' + JSON.stringify(data.detail);
 });
 
 async function init() {
