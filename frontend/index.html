@@ -166,7 +166,14 @@
   .panel-body{padding:14px 16px;}
 
   .map-wrap{position:relative;height:480px;}
+  .map-wrap-full{height:min(72vh,680px);}
   #map{height:100%;width:100%;}
+
+  /* Live Map, Deliveries, Report and More tabs are dedicated views — hide the stat cards there */
+  .stats-row:has(~ #sec-map.active),
+  .stats-row:has(~ #sec-deliveries.active),
+  .stats-row:has(~ #sec-report.active),
+  .stats-row:has(~ #sec-more.active){display:none;}
   .legend{
     position:absolute;bottom:14px;left:14px;
     background:rgba(15,27,48,.92);
@@ -248,6 +255,10 @@
   /* ---------- mobile bottom nav ---------- */
   .bottom-nav{display:none;}
 
+  /* ================= tab sections (all breakpoints) ================= */
+  .section{display:none;}
+  .section.active{display:block;}
+
   /* ================= MOBILE ================= */
   @media (max-width:860px){
     .app{grid-template-columns:1fr;}
@@ -261,13 +272,10 @@
 
     .content-grid{grid-template-columns:1fr;}
     .map-wrap{height:340px;}
+    .map-wrap-full{height:min(58vh,480px);}
     .alerts-list{max-height:none;}
 
     .tools-grid{grid-template-columns:1fr;}
-
-    /* tab sections */
-    .section{display:none;}
-    .section.active{display:block;}
 
     .bottom-nav{
       display:flex;
@@ -286,8 +294,97 @@
     .bn-btn svg{width:19px;height:19px;}
     .bn-btn.active{color:var(--blue);}
   }
+
+  /* ---------- fullscreen map (Map tab), Google-Maps style ---------- */
+  .map-fullscreen{
+    display:none;
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    z-index:800;
+    background:var(--bg);
+  }
+  #sec-map.active .map-fullscreen{display:block;}
   @media (min-width:861px){
-    .section{display:block !important;}
+    .map-fullscreen{left:68px;}
+  }
+  .map-fullscreen #map{height:100%;width:100%;}
+
+  /* search bar + filter chips, floating over the map */
+  .map-search-wrap{
+    position:absolute;top:calc(14px + var(--safe-t));left:14px;right:14px;z-index:1000;
+  }
+  .map-search-bar{
+    display:flex;align-items:center;gap:9px;
+    background:var(--card);border:1px solid var(--border-soft);border-radius:14px;
+    padding:11px 14px;box-shadow:0 6px 20px rgba(0,0,0,.28);
+  }
+  .map-search-bar svg{width:18px;height:18px;color:var(--text-faint);flex-shrink:0;}
+  .map-search-bar input{border:none;background:transparent;padding:0;font-size:13.5px;color:var(--text);}
+  .map-search-bar input:focus{outline:none;}
+  .map-search-suggestions{
+    margin-top:6px;background:var(--card);border:1px solid var(--border-soft);border-radius:12px;
+    overflow-y:auto;max-height:220px;display:none;box-shadow:0 6px 20px rgba(0,0,0,.28);
+  }
+  .map-search-suggestions.show{display:block;}
+  .map-suggestion-item{padding:10px 14px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--border-soft);}
+  .map-suggestion-item:last-child{border-bottom:none;}
+  .map-suggestion-item:hover{background:var(--card-2);}
+
+  /* recalculate + plan-route FABs, stacked bottom-right */
+  .map-fab-stack{
+    position:absolute;z-index:1000;right:14px;bottom:calc(14px + var(--safe-b));
+    display:flex;flex-direction:column;align-items:center;gap:12px;
+  }
+  .map-fab{
+    width:44px;height:44px;border-radius:50%;margin:0;padding:0;
+    background:var(--card);border:1px solid var(--border-soft);color:var(--text);
+    font-size:19px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px rgba(0,0,0,.3);
+  }
+  .map-fab.spinning{animation:map-fab-spin 1s linear infinite;}
+  @keyframes map-fab-spin{to{transform:rotate(360deg);}}
+  .map-fab-plus{
+    width:52px;height:52px;font-size:28px;font-weight:400;line-height:1;
+    background:var(--blue);color:#fff;border:none;
+  }
+  .map-fab-plus:hover{background:#2379c4;}
+
+  /* floating detail card for a tapped road segment / incident marker */
+  .map-detail-card{
+    position:absolute;left:14px;right:14px;bottom:calc(14px + var(--safe-b));
+    z-index:1000;background:var(--card);border:1px solid var(--border-soft);
+    border-radius:16px;overflow:hidden;display:none;
+    box-shadow:0 -6px 24px rgba(0,0,0,.32);
+  }
+  .map-detail-card.show{display:block;}
+  .map-detail-close{
+    position:absolute;top:8px;right:8px;z-index:2;width:26px;height:26px;border-radius:50%;
+    background:rgba(0,0,0,.45);color:#fff;border:none;font-size:15px;line-height:1;cursor:pointer;margin:0;padding:0;
+  }
+  .map-detail-photo{width:100%;height:110px;overflow:hidden;}
+  .map-detail-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  .map-detail-body{padding:14px 16px;}
+  .map-detail-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .map-detail-title{font-weight:700;font-size:14.5px;text-transform:capitalize;}
+  .map-detail-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+  .map-detail-status{flex-shrink:0;padding:4px 12px;border-radius:14px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;}
+  .map-detail-meta{margin-top:10px;font-size:11.5px;color:var(--text-faint);line-height:1.8;}
+  .map-detail-actions{display:flex;gap:10px;margin-top:12px;}
+  .map-detail-actions button{margin:0;flex:1;padding:10px;}
+
+  /* inline route-finder panel ("Find Alternate Route") */
+  .map-route-panel{
+    position:absolute;left:14px;right:14px;bottom:calc(14px + var(--safe-b));
+    z-index:1050;background:var(--card);border:1px solid var(--border-soft);
+    border-radius:16px;padding:14px 16px;display:none;
+    box-shadow:0 -6px 24px rgba(0,0,0,.32);max-height:60vh;overflow-y:auto;
+  }
+  .map-route-panel.show{display:block;}
+  .map-route-panel-head{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13px;margin-bottom:8px;}
+  .map-route-panel-head .map-detail-close{position:static;background:var(--card-2);color:var(--text);}
+
+  @media (max-width:860px){
+    .map-fab-stack, .map-detail-card, .map-route-panel{bottom:calc(76px + var(--safe-b));}
   }
 </style>
 </head>
@@ -370,15 +467,15 @@
           <div style="font-size:12px;color:var(--text-faint);">Stay informed, keep the region moving.</div>
         </div>
         <div class="panel">
+          <div class="panel-head"><h2>Recent incidents</h2></div>
+          <div class="alerts-list" id="incident-list"><div class="empty-note">Loading…</div></div>
+        </div>
+        <div class="panel" style="margin-top:14px;">
           <div class="panel-head">
-            <h2>Road status</h2>
+            <h2>Highest-risk routes</h2>
             <button class="secondary" id="btn-recalc-2" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;">Recalculate</button>
           </div>
           <div class="alerts-list" id="risk-list-2" style="max-height:none;"><div class="empty-note">Loading risk data…</div></div>
-        </div>
-        <div class="panel" style="margin-top:14px;">
-          <div class="panel-head"><h2>Recent incidents</h2></div>
-          <div class="alerts-list" id="incident-list"><div class="empty-note">Loading…</div></div>
         </div>
       </section>
 
@@ -388,45 +485,55 @@
         <div id="incident-detail-body"></div>
       </section>
 
-      <!-- MAP -->
+      <!-- MAP (full-screen map, floating controls overlaid — Google Maps style) -->
       <section class="section" id="sec-map">
-        <div class="content-grid">
-          <div class="panel">
-            <div class="panel-head">
-              <h2>Live risk map</h2>
-              <div style="display:flex;gap:8px;">
-                <button class="secondary" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;" onclick="setNavTarget('sec-route')">Plan route</button>
-                <button class="secondary" id="btn-recalc" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;">Recalculate</button>
-              </div>
-            </div>
-            <div class="map-wrap">
-              <div id="map"></div>
-              <div class="legend">
-                <div><span class="dot" style="background:#25b876"></span>Low risk (0–30)</div>
-                <div><span class="dot" style="background:#e0a52f"></span>Medium (30–60)</div>
-                <div><span class="dot" style="background:#e0524a"></span>High (60–100)</div>
-              </div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><h2>Live alerts</h2></div>
-            <div class="alerts-list" id="risk-list"><div class="empty-note">Loading risk data…</div></div>
-          </div>
-        </div>
-      </section>
+        <div class="map-fullscreen">
+          <div id="map"></div>
 
-      <!-- ROUTE -->
-      <section class="section" id="sec-route">
-        <button class="secondary" style="width:auto;margin-bottom:12px;" onclick="setNavTarget('sec-map')">← Back to map</button>
-        <div class="panel">
-          <div class="panel-head"><h2>Route optimization</h2></div>
-          <div class="panel-body">
+          <div class="map-search-wrap">
+            <div class="map-search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="map-search-input" type="text" placeholder="Search location, district or route…" autocomplete="off" />
+            </div>
+            <div class="map-search-suggestions" id="map-search-suggestions"></div>
+          </div>
+
+          <div class="map-fab-stack">
+            <button class="map-fab" id="btn-recalc" title="Recalculate risk">⟳</button>
+            <button class="map-fab map-fab-plus" id="btn-plan-route" title="Plan a route">+</button>
+          </div>
+
+          <div class="map-detail-card" id="map-detail-card">
+            <button class="map-detail-close" id="map-detail-close">×</button>
+            <div class="map-detail-photo" id="map-detail-photo" style="display:none;"><img id="map-detail-img" /></div>
+            <div class="map-detail-body">
+              <div class="map-detail-top">
+                <div>
+                  <div class="map-detail-title" id="map-detail-title"></div>
+                  <div class="map-detail-sub" id="map-detail-sub"></div>
+                </div>
+                <span class="map-detail-status" id="map-detail-status"></span>
+              </div>
+              <div class="map-detail-meta" id="map-detail-meta"></div>
+              <div class="map-detail-actions">
+                <button class="secondary" id="map-detail-view">View Details</button>
+                <button id="map-detail-alt">Find Alternate Route</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="map-route-panel" id="map-route-panel">
+            <div class="map-route-panel-head">
+              <span>Find a route</span>
+              <button class="map-detail-close" id="map-route-close">×</button>
+            </div>
             <label>From</label>
             <select id="route-from"></select>
             <label>To</label>
             <select id="route-to"></select>
             <button id="btn-route">Find safest route</button>
             <div id="result-box"></div>
+            <div class="alerts-list" id="route-alerts" style="margin-top:10px;"></div>
           </div>
         </div>
       </section>
@@ -444,14 +551,21 @@
                 <option value="road_damage">Road damage</option>
                 <option value="congestion">Congestion</option>
               </select>
-              <label>Latitude</label>
-              <input id="incident-lat" type="number" step="0.0001" value="25.85" />
-              <label>Longitude</label>
-              <input id="incident-lon" type="number" step="0.0001" value="93.60" />
-              <label>Description</label>
-              <textarea id="incident-desc" rows="2">Road blocked near Diphu-Dimapur stretch</textarea>
               <label>Photo (optional)</label>
               <input id="incident-photo" type="file" accept="image/*" capture="environment" />
+              <label>Location</label>
+              <div style="display:flex;gap:8px;">
+                <button type="button" id="btn-use-current-loc" class="secondary" style="margin:0;flex:1;">📍 Use current location</button>
+                <button type="button" id="btn-pick-map-loc" class="secondary" style="margin:0;flex:1;">🗺️ Pick on map</button>
+              </div>
+              <div id="incident-loc-display" style="font-size:11.5px;color:var(--text-faint);margin-top:8px;">No location selected yet.</div>
+              <div id="incident-pick-map-wrap" class="map-wrap" style="height:220px;margin-top:8px;display:none;border:1px solid var(--border-soft);border-radius:8px;overflow:hidden;">
+                <div id="incident-pick-map" style="height:100%;width:100%;"></div>
+              </div>
+              <input id="incident-lat" type="hidden" />
+              <input id="incident-lon" type="hidden" />
+              <label>Description</label>
+              <textarea id="incident-desc" rows="2">Road blocked near Diphu-Dimapur stretch</textarea>
               <button id="btn-incident" class="secondary">Submit report</button>
               <div id="incident-status"></div>
             </div>
@@ -460,12 +574,19 @@
           <div class="panel">
             <div class="panel-head"><h2>Pull live weather</h2></div>
             <div class="panel-body">
-              <label>Latitude</label>
-              <input id="weather-lat" type="number" step="0.0001" value="25.9091" />
-              <label>Longitude</label>
-              <input id="weather-lon" type="number" step="0.0001" value="93.7267" />
-              <label>District</label>
-              <input id="weather-district" type="text" value="Dimapur" />
+              <label>Location</label>
+              <div style="display:flex;gap:8px;">
+                <input id="weather-location-search" type="text" placeholder="Type a place, e.g. Dimapur" style="flex:1;margin:0;" />
+                <button type="button" id="btn-weather-search-loc" class="secondary" style="margin:0;width:auto;padding:9px 14px;">Search</button>
+              </div>
+              <button type="button" id="btn-weather-pick-map-loc" class="secondary" style="margin-top:8px;">🗺️ Pick on map</button>
+              <div id="weather-loc-display" style="font-size:11.5px;color:var(--text-faint);margin-top:8px;">No location selected yet.</div>
+              <div id="weather-pick-map-wrap" class="map-wrap" style="height:220px;margin-top:8px;display:none;border:1px solid var(--border-soft);border-radius:8px;overflow:hidden;">
+                <div id="weather-pick-map" style="height:100%;width:100%;"></div>
+              </div>
+              <input id="weather-lat" type="hidden" value="25.9091" />
+              <input id="weather-lon" type="hidden" value="93.7267" />
+              <input id="weather-district" type="hidden" value="Dimapur" />
               <button id="btn-weather" class="secondary">Fetch &amp; store weather</button>
               <div id="weather-status"></div>
             </div>
@@ -477,8 +598,29 @@
       <section class="section" id="sec-deliveries">
         <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px;">Demo data — not yet backed by a live dispatch system.</div>
         <div class="panel">
-          <div class="panel-head"><h2>My deliveries</h2></div>
+          <div class="panel-head">
+            <h2>My deliveries</h2>
+            <button class="secondary" id="btn-show-track-delivery" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;">+ Track new delivery</button>
+          </div>
           <div id="delivery-list"></div>
+        </div>
+
+        <div class="panel" id="track-delivery-panel" style="margin-top:14px;display:none;">
+          <div class="panel-head"><h2>Track a new delivery</h2></div>
+          <div class="panel-body">
+            <label>Vehicle number plate</label>
+            <input id="new-delivery-plate" type="text" placeholder="e.g. AS-01-AB-1234" />
+            <label>Delivery number / code</label>
+            <input id="new-delivery-code" type="text" placeholder="e.g. DLV-2041" />
+            <label>Cargo</label>
+            <input id="new-delivery-cargo" type="text" placeholder="e.g. Medicines" />
+            <label>From</label>
+            <select id="new-delivery-from"></select>
+            <label>To</label>
+            <select id="new-delivery-to"></select>
+            <button id="btn-add-delivery">Start tracking</button>
+            <div id="new-delivery-status"></div>
+          </div>
         </div>
       </section>
 
@@ -521,16 +663,6 @@
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-head"><h2>Vehicle tracking</h2></div>
-          <div class="panel-body">
-            <label>Vehicle ID</label>
-            <input id="track-vehicle-id" type="text" placeholder="e.g. AS-01-AB-1234" value="AS-01-AB-1234" />
-            <button id="btn-track" class="secondary">Load recent pings</button>
-            <button id="btn-simulate-ping" class="secondary" style="margin-top:8px;">Simulate a ping (demo)</button>
-            <div id="track-status"></div>
-          </div>
-        </div>
       </section>
 
     </div>
@@ -615,6 +747,90 @@ document.querySelectorAll('.rail-btn, .bn-btn').forEach(btn => {
   btn.addEventListener('click', () => setNavTarget(btn.dataset.target));
 });
 
+let markerLayers = []; // incident markers only
+let edgesCache = [];
+let nodeNamesCache = [];
+
+// ---- "+" FAB: open the route planner (same panel used by "Find Alternate Route") ----
+document.getElementById('btn-plan-route').addEventListener('click', () => showRoutePanel(null, null, false));
+
+// ---- Floating detail card (incident marker) + route panel ----
+function closeMapDetail() { document.getElementById('map-detail-card').classList.remove('show'); }
+function closeRoutePanel() { document.getElementById('map-route-panel').classList.remove('show'); }
+document.getElementById('map-detail-close').addEventListener('click', closeMapDetail);
+document.getElementById('map-route-close').addEventListener('click', closeRoutePanel);
+
+function showRoutePanel(from, to, autoRun) {
+  closeMapDetail();
+  document.getElementById('map-route-panel').classList.add('show');
+  if (from) document.getElementById('route-from').value = from;
+  if (to) document.getElementById('route-to').value = to;
+  if (autoRun) document.getElementById('btn-route').click();
+  setTimeout(() => map.invalidateSize(), 50);
+}
+
+function showIncidentDetailCard(inc) {
+  closeRoutePanel();
+  const photoWrap = document.getElementById('map-detail-photo');
+  if (inc.photo_url) {
+    photoWrap.style.display = 'block';
+    document.getElementById('map-detail-img').src = inc.photo_url;
+  } else {
+    photoWrap.style.display = 'none';
+  }
+  document.getElementById('map-detail-title').textContent = inc.incident_type.replace('_', ' ');
+  document.getElementById('map-detail-sub').textContent = inc.description || '';
+  const statusEl = document.getElementById('map-detail-status');
+  statusEl.textContent = inc.verified ? 'Verified' : 'Reported';
+  statusEl.style.background = '#e0524a';
+  document.getElementById('map-detail-meta').innerHTML =
+    `Reported: ${timeAgo(inc.reported_at)}<br/>By: ${inc.reporter_id || 'Field Officer'}`;
+  document.getElementById('map-detail-view').onclick = () => showIncidentDetail(inc.id);
+  document.getElementById('map-detail-alt').onclick = () => showRoutePanel(null, null, false);
+  document.getElementById('map-detail-card').classList.add('show');
+}
+
+// ---- Search bar: matches known places and road/route names ----
+function renderSearchSuggestions(query) {
+  const box = document.getElementById('map-search-suggestions');
+  box.innerHTML = '';
+  if (!query) { box.classList.remove('show'); return; }
+  const q = query.toLowerCase();
+  const placeMatches = nodeNamesCache.filter(n => n.toLowerCase().includes(q)).slice(0, 5)
+    .map(n => ({ type: 'place', label: n }));
+  const routeMatches = edgesCache.filter(e =>
+    (e.road_name || '').toLowerCase().includes(q) || `${e.from_name} ${e.to_name}`.toLowerCase().includes(q)
+  ).slice(0, 5).map(e => ({ type: 'route', label: e.road_name || `${e.from_name} – ${e.to_name}`, edge: e }));
+  const results = [...placeMatches, ...routeMatches];
+  if (!results.length) {
+    box.innerHTML = '<div class="map-suggestion-item">No matches found.</div>';
+    box.classList.add('show');
+    return;
+  }
+  results.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'map-suggestion-item';
+    div.textContent = (r.type === 'place' ? '📍 ' : '🛣️ ') + r.label;
+    div.addEventListener('click', () => {
+      document.getElementById('map-search-input').value = r.label;
+      box.classList.remove('show');
+      if (r.type === 'place' && nodeCoords[r.label]) {
+        map.flyTo(nodeCoords[r.label], 9);
+      } else if (r.type === 'route') {
+        const from = nodeCoords[r.edge.from_name], to = nodeCoords[r.edge.to_name];
+        if (from && to) map.flyToBounds([from, to], { padding: [60, 60] });
+        showRoutePanel(r.edge.from_name, r.edge.to_name, false);
+      }
+    });
+    box.appendChild(div);
+  });
+  box.classList.add('show');
+}
+document.getElementById('map-search-input').addEventListener('input', e => renderSearchSuggestions(e.target.value.trim()));
+document.getElementById('map-search-input').addEventListener('blur', () => {
+  setTimeout(() => document.getElementById('map-search-suggestions').classList.remove('show'), 150);
+});
+
 function renderAlertItem(e) {
   const div = document.createElement('div');
   div.className = 'alert-item';
@@ -696,23 +912,22 @@ async function loadNodesAndDraw() {
   const res = await fetch(`${API}/risk/edges`);
   if (!res.ok) return;
   const edges = await res.json();
+  edgesCache = edges;
 
   edgeLayers.forEach(l => map.removeLayer(l));
   edgeLayers = [];
+  markerLayers.forEach(m => map.removeLayer(m));
+  markerLayers = [];
 
-  const list1 = document.getElementById('risk-list');
   const list2 = document.getElementById('risk-list-2');
-  list1.innerHTML = '';
   list2.innerHTML = '';
 
   if (edges.length === 0) {
-    list1.innerHTML = '<div class="empty-note">No risk data yet.</div>';
     list2.innerHTML = '<div class="empty-note">No risk data yet.</div>';
   } else {
-    edges.forEach(e => {
-      list1.appendChild(renderAlertItem(e));
-      list2.appendChild(renderAlertItem(e));
-    });
+    // Overview page: only the top 6 highest-risk routes.
+    const topRisk = [...edges].sort((a, b) => b.current_risk - a.current_risk).slice(0, 6);
+    topRisk.forEach(e => list2.appendChild(renderAlertItem(e)));
   }
 
   // stats — bucketed to match Open / Degraded / High Risk / Closed
@@ -726,34 +941,52 @@ async function loadNodesAndDraw() {
   document.getElementById('stat-closed').textContent = closed;
   document.getElementById('rail-alert-dot').classList.toggle('show', (high + closed) > 0);
 
-  // draw edges on map if coordinates are known
+  // draw roads in a plain, neutral color — no risk shown until the user actually finds a route
   edges.forEach(e => {
     const from = nodeCoords[e.from_name];
     const to = nodeCoords[e.to_name];
     if (from && to) {
       const line = L.polyline([from, to], {
-        color: riskColor(e.current_risk),
+        color: '#2f8fe0',
         weight: 4,
-        opacity: 0.85,
-      }).addTo(map).bindPopup(`<b>${e.from_name} → ${e.to_name}</b><br>Risk: ${Math.round(e.current_risk)}`);
+        opacity: 0.8,
+      }).addTo(map).on('click', () => showRoutePanel(e.from_name, e.to_name, false));
       edgeLayers.push(line);
     }
+  });
+
+  // incident warning markers
+  incidentsCache.forEach(inc => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:22px;height:22px;border-radius:50%;background:#e0524a;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.4);">!</div>`,
+      iconSize: [22, 22], iconAnchor: [11, 11],
+    });
+    const marker = L.marker([inc.lat, inc.lon], { icon }).addTo(map).on('click', () => showIncidentDetailCard(inc));
+    markerLayers.push(marker);
   });
 }
 
 async function loadGraphOnMap() {
   const nodesRes = await fetch(`${API}/nodes`);
   const nodeNames = nodesRes.ok ? await nodesRes.json() : [];
+  nodeNamesCache = nodeNames;
 
   const fromSel = document.getElementById('route-from');
   const toSel = document.getElementById('route-to');
+  const dFromSel = document.getElementById('new-delivery-from');
+  const dToSel = document.getElementById('new-delivery-to');
   fromSel.innerHTML = '';
   toSel.innerHTML = '';
+  dFromSel.innerHTML = '';
+  dToSel.innerHTML = '';
   nodeNames.forEach(name => {
     fromSel.innerHTML += `<option value="${name}">${name}</option>`;
     toSel.innerHTML += `<option value="${name}">${name}</option>`;
+    dFromSel.innerHTML += `<option value="${name}">${name}</option>`;
+    dToSel.innerHTML += `<option value="${name}">${name}</option>`;
   });
-  if (nodeNames.length > 1) toSel.selectedIndex = 1;
+  if (nodeNames.length > 1) { toSel.selectedIndex = 1; dToSel.selectedIndex = 1; }
 }
 
 async function recalc(btn) {
@@ -765,21 +998,47 @@ async function recalc(btn) {
   btn.textContent = original;
   btn.disabled = false;
 }
-document.getElementById('btn-recalc').addEventListener('click', (e) => recalc(e.target));
+document.getElementById('btn-recalc').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  await fetch(`${API}/risk/recalculate`, { method: 'POST' });
+  await loadIncidents();
+  await loadNodesAndDraw();
+  btn.classList.remove('spinning');
+  btn.disabled = false;
+});
 document.getElementById('btn-recalc-2').addEventListener('click', (e) => recalc(e.target));
+
+function renderRouteAlertItem(s) {
+  const div = document.createElement('div');
+  div.className = 'alert-item';
+  const color = riskColor(s.risk);
+  div.innerHTML = `
+    <span class="bar" style="background:${color}"></span>
+    <div class="body">
+      <div class="route">${s.from} → ${s.to}</div>
+      <div class="meta">${s.road_name} · ${s.distance_km}km · ${s.risk >= 60 ? 'High risk' : 'Medium risk'}</div>
+    </div>
+    <span class="risk-badge" style="background:${color}">${Math.round(s.risk)}</span>`;
+  return div;
+}
 
 document.getElementById('btn-route').addEventListener('click', async () => {
   const from_ = document.getElementById('route-from').value;
   const to = document.getElementById('route-to').value;
   const box = document.getElementById('result-box');
+  const alertsBox = document.getElementById('route-alerts');
   box.className = 'show';
   box.textContent = 'Finding route…';
+  alertsBox.innerHTML = '<div class="empty-note">Finding route…</div>';
 
   const res = await fetch(`${API}/route?from_=${encodeURIComponent(from_)}&to=${encodeURIComponent(to)}`);
   const data = await res.json();
 
   if (!res.ok) {
     box.textContent = 'Error: ' + (data.detail || 'could not find route');
+    alertsBox.innerHTML = '<div class="empty-note">No route to show alerts for.</div>';
     return;
   }
 
@@ -788,17 +1047,86 @@ document.getElementById('btn-route').addEventListener('click', async () => {
     `Total distance: ${data.total_distance_km} km\n` +
     `Average risk: ${data.average_risk}\n\n` +
     data.segments.map(s => `  ${s.from} → ${s.to} (${s.road_name}, ${s.distance_km}km, risk ${s.risk})`).join('\n');
+
+  // Live alerts on route: only segments with medium/high risk (>= 30).
+  const riskySegments = data.segments.filter(s => s.risk >= 30).sort((a, b) => b.risk - a.risk);
+  alertsBox.innerHTML = '';
+  if (riskySegments.length === 0) {
+    alertsBox.innerHTML = '<div class="empty-note">No risk alerts on this route — clear all the way.</div>';
+  } else {
+    riskySegments.forEach(s => alertsBox.appendChild(renderRouteAlertItem(s)));
+  }
+});
+
+// ---- Incident location: "Use current location" (like WhatsApp) or "Pick on map" ----
+let incidentPickMap = null;
+let incidentPickMarker = null;
+
+function setIncidentLocation(lat, lon, sourceLabel) {
+  document.getElementById('incident-lat').value = lat;
+  document.getElementById('incident-lon').value = lon;
+  document.getElementById('incident-loc-display').textContent =
+    `${sourceLabel}: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+}
+
+document.getElementById('btn-use-current-loc').addEventListener('click', () => {
+  const display = document.getElementById('incident-loc-display');
+  document.getElementById('incident-pick-map-wrap').style.display = 'none';
+  if (!navigator.geolocation) {
+    display.textContent = 'Location access not supported on this device — use "Pick on map" instead.';
+    return;
+  }
+  display.textContent = 'Getting your current location…';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => setIncidentLocation(pos.coords.latitude, pos.coords.longitude, 'Current location'),
+    () => { display.textContent = 'Could not access your location — allow location access, or use "Pick on map".'; },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+});
+
+document.getElementById('btn-pick-map-loc').addEventListener('click', () => {
+  const wrap = document.getElementById('incident-pick-map-wrap');
+  const opening = wrap.style.display === 'none';
+  wrap.style.display = opening ? 'block' : 'none';
+  if (!opening) return;
+
+  if (!incidentPickMap) {
+    incidentPickMap = L.map('incident-pick-map', { zoomControl: true }).setView([25.9, 93.5], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(incidentPickMap);
+    incidentPickMap.on('click', (e) => {
+      const { lat, lng } = e.latlng;
+      if (incidentPickMarker) incidentPickMarker.setLatLng(e.latlng);
+      else incidentPickMarker = L.marker(e.latlng, { draggable: true }).addTo(incidentPickMap)
+        .on('dragend', () => {
+          const p = incidentPickMarker.getLatLng();
+          setIncidentLocation(p.lat, p.lng, 'Pinned on map');
+        });
+      setIncidentLocation(lat, lng, 'Pinned on map');
+    });
+  }
+  // map was hidden (0x0) until now — force it to re-measure
+  setTimeout(() => incidentPickMap.invalidateSize(), 50);
 });
 
 document.getElementById('btn-incident').addEventListener('click', async () => {
   const status = document.getElementById('incident-status');
   status.className = 'show';
+
+  const lat = document.getElementById('incident-lat').value;
+  const lon = document.getElementById('incident-lon').value;
+  if (!lat || !lon) {
+    status.className = 'show';
+    status.textContent = 'Set a location first — tap "Use current location" or "Pick on map".';
+    return;
+  }
   status.textContent = 'Submitting…';
 
   const form = new FormData();
   form.append('incident_type', document.getElementById('incident-type').value);
-  form.append('lat', document.getElementById('incident-lat').value);
-  form.append('lon', document.getElementById('incident-lon').value);
+  form.append('lat', lat);
+  form.append('lon', lon);
   form.append('description', document.getElementById('incident-desc').value);
   const photoFile = document.getElementById('incident-photo').files[0];
   if (photoFile) form.append('photo', photoFile);
@@ -811,8 +1139,70 @@ document.getElementById('btn-incident').addEventListener('click', async () => {
     return;
   }
   status.textContent = `Report #${data.incident_id} saved. Risk engine re-ran automatically.`;
-  await loadNodesAndDraw();
+  document.getElementById('incident-lat').value = '';
+  document.getElementById('incident-lon').value = '';
+  document.getElementById('incident-loc-display').textContent = 'No location selected yet.';
+  document.getElementById('incident-pick-map-wrap').style.display = 'none';
+  if (incidentPickMarker) { incidentPickMap.removeLayer(incidentPickMarker); incidentPickMarker = null; }
   await loadIncidents();
+  await loadNodesAndDraw();
+});
+
+// ---- Weather location: type a place name (geocoded) or pin on map ----
+let weatherPickMap = null;
+let weatherPickMarker = null;
+
+function setWeatherLocation(lat, lon, label) {
+  document.getElementById('weather-lat').value = lat;
+  document.getElementById('weather-lon').value = lon;
+  document.getElementById('weather-district').value = label;
+  document.getElementById('weather-loc-display').textContent = `${label}: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+}
+setWeatherLocation(25.9091, 93.7267, 'Dimapur');
+
+async function geocodePlace(query) {
+  const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data.results || !data.results.length) return null;
+  const r = data.results[0];
+  return { lat: r.latitude, lon: r.longitude, label: [r.name, r.admin1].filter(Boolean).join(', ') };
+}
+
+document.getElementById('btn-weather-search-loc').addEventListener('click', async () => {
+  const display = document.getElementById('weather-loc-display');
+  const query = document.getElementById('weather-location-search').value.trim();
+  document.getElementById('weather-pick-map-wrap').style.display = 'none';
+  if (!query) { display.textContent = 'Type a place name first.'; return; }
+  display.textContent = 'Searching…';
+  const found = await geocodePlace(query);
+  if (!found) { display.textContent = `Could not find "${query}" — try a different spelling, or pin it on the map.`; return; }
+  setWeatherLocation(found.lat, found.lon, found.label);
+});
+
+document.getElementById('btn-weather-pick-map-loc').addEventListener('click', () => {
+  const wrap = document.getElementById('weather-pick-map-wrap');
+  const opening = wrap.style.display === 'none';
+  wrap.style.display = opening ? 'block' : 'none';
+  if (!opening) return;
+
+  if (!weatherPickMap) {
+    weatherPickMap = L.map('weather-pick-map', { zoomControl: true }).setView([25.9, 93.5], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(weatherPickMap);
+    weatherPickMap.on('click', (e) => {
+      const { lat, lng } = e.latlng;
+      if (weatherPickMarker) weatherPickMarker.setLatLng(e.latlng);
+      else weatherPickMarker = L.marker(e.latlng, { draggable: true }).addTo(weatherPickMap)
+        .on('dragend', () => {
+          const p = weatherPickMarker.getLatLng();
+          setWeatherLocation(p.lat, p.lng, 'Pinned on map');
+        });
+      setWeatherLocation(lat, lng, 'Pinned on map');
+    });
+  }
+  setTimeout(() => weatherPickMap.invalidateSize(), 50);
 });
 
 document.getElementById('btn-weather').addEventListener('click', async () => {
@@ -839,44 +1229,10 @@ document.getElementById('btn-weather').addEventListener('click', async () => {
   await loadNodesAndDraw();
 });
 
-document.getElementById('btn-track').addEventListener('click', async () => {
-  const id = document.getElementById('track-vehicle-id').value.trim();
-  const status = document.getElementById('track-status');
-  status.className = 'show';
-  if (!id) { status.textContent = 'Enter a vehicle ID first.'; return; }
-  status.textContent = 'Loading…';
-  const res = await fetch(`${API}/gps-pings/${encodeURIComponent(id)}`);
-  const data = await res.json();
-  if (!res.ok) { status.textContent = 'Error: ' + JSON.stringify(data.detail); return; }
-  if (!data.pings.length) { status.textContent = `No pings yet for ${id}. Try "Simulate a ping" below.`; return; }
-  status.textContent = data.pings.map(p =>
-    `${p.recorded_at}  •  ${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}  •  ${p.speed ?? '—'} km/h`
-  ).join('\n');
-});
-
-document.getElementById('btn-simulate-ping').addEventListener('click', async () => {
-  const id = document.getElementById('track-vehicle-id').value.trim() || 'DEMO-VEHICLE';
-  const status = document.getElementById('track-status');
-  status.className = 'show';
-  status.textContent = 'Sending test ping…';
-  const res = await fetch(`${API}/gps-ping`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      vehicle_id: id,
-      lat: 25.9 + (Math.random() - 0.5) * 0.4,
-      lon: 93.5 + (Math.random() - 0.5) * 0.4,
-      speed: Math.round(20 + Math.random() * 40),
-    }),
-  });
-  const data = await res.json();
-  status.textContent = res.ok ? 'Ping recorded. Click "Load recent pings" to see it.' : 'Error: ' + JSON.stringify(data.detail);
-});
-
 const MOCK_DELIVERIES = [
-  { id: 'DLV-1023', cargo: 'Medicines', route: 'Guwahati → Aizawl', eta: '12 hr 30 min', pct: 55, status: 'transit', label: 'In Transit' },
-  { id: 'DLV-1045', cargo: 'Food Supplies', route: 'Shillong → Imphal', eta: '6 hr 20 min', pct: 35, status: 'delayed', label: 'Delayed' },
-  { id: 'DLV-1067', cargo: 'Construction Material', route: 'Guwahati → Itanagar', eta: '1 day 4 hr', pct: 15, status: 'ontrack', label: 'On Track' },
+  { id: 'DLV-1023', plate: 'AS-01-AB-1234', cargo: 'Medicines', route: 'Guwahati → Aizawl', eta: '12 hr 30 min', pct: 55, status: 'transit', label: 'In Transit' },
+  { id: 'DLV-1045', plate: 'ML-05-CD-5678', cargo: 'Food Supplies', route: 'Shillong → Imphal', eta: '6 hr 20 min', pct: 35, status: 'delayed', label: 'Delayed' },
+  { id: 'DLV-1067', plate: 'AR-02-EF-9012', cargo: 'Construction Material', route: 'Guwahati → Itanagar', eta: '1 day 4 hr', pct: 15, status: 'ontrack', label: 'On Track' },
 ];
 
 function renderDeliveries() {
@@ -890,6 +1246,7 @@ function renderDeliveries() {
         <div>
           <div class="id">${d.id}</div>
           <div class="cargo">${d.cargo} · ${d.route}</div>
+          <div class="cargo" style="margin-top:2px;">🚚 ${d.plate}</div>
         </div>
         <span class="delivery-status ${d.status}">${d.label}</span>
       </div>
@@ -899,6 +1256,62 @@ function renderDeliveries() {
     container.appendChild(div);
   });
 }
+
+document.getElementById('btn-show-track-delivery').addEventListener('click', () => {
+  const panel = document.getElementById('track-delivery-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+function formatDuration(hoursFloat) {
+  const totalMin = Math.round(hoursFloat * 60);
+  const hr = Math.floor(totalMin / 60);
+  const min = totalMin % 60;
+  if (hr === 0) return `${min} min`;
+  return `${hr} hr ${min} min`;
+}
+
+document.getElementById('btn-add-delivery').addEventListener('click', async () => {
+  const plate = document.getElementById('new-delivery-plate').value.trim();
+  const code = document.getElementById('new-delivery-code').value.trim();
+  const cargo = document.getElementById('new-delivery-cargo').value.trim();
+  const from_ = document.getElementById('new-delivery-from').value;
+  const to = document.getElementById('new-delivery-to').value;
+  const status = document.getElementById('new-delivery-status');
+  status.className = 'show';
+
+  if (!plate || !code) { status.textContent = 'Vehicle number plate and delivery number/code are required.'; return; }
+  if (!from_ || !to || from_ === to) { status.textContent = 'Pick two different towns for From and To.'; return; }
+  if (MOCK_DELIVERIES.some(d => d.id === code)) { status.textContent = `Delivery ${code} is already being tracked.`; return; }
+
+  status.textContent = 'Working out the safest route and ETA…';
+  const res = await fetch(`${API}/route?from_=${encodeURIComponent(from_)}&to=${encodeURIComponent(to)}`);
+  const data = await res.json();
+  if (!res.ok) { status.textContent = 'Error: ' + (data.detail || 'could not compute a route for this delivery'); return; }
+
+  // Estimate travel time from the risk-weighted route: higher average risk on the
+  // route slows the assumed speed down (bad road conditions), same idea as the
+  // risk penalty routing already uses.
+  const speedKmph = Math.max(15, 45 - (data.average_risk / 100) * 25);
+  const etaHours = data.total_distance_km / speedKmph;
+
+  MOCK_DELIVERIES.unshift({
+    id: code,
+    plate,
+    cargo: cargo || 'General cargo',
+    route: data.path.join(' → '),
+    eta: formatDuration(etaHours),
+    pct: 0,
+    status: 'ontrack',
+    label: 'On Track',
+  });
+
+  renderDeliveries();
+  document.getElementById('new-delivery-plate').value = '';
+  document.getElementById('new-delivery-code').value = '';
+  document.getElementById('new-delivery-cargo').value = '';
+  status.textContent = `Now tracking ${code} — going via ${data.path.join(' → ')}, ETA ${formatDuration(etaHours)}.`;
+  setTimeout(() => { document.getElementById('track-delivery-panel').style.display = 'none'; }, 1800);
+});
 
 async function init() {
   const headerStatus = document.getElementById('header-status');
@@ -926,8 +1339,8 @@ async function init() {
   } catch (e) { /* endpoint may not exist yet — edges just won't draw on map */ }
 
   await loadGraphOnMap();
-  await loadNodesAndDraw();
   await loadIncidents();
+  await loadNodesAndDraw();
   renderDeliveries();
 }
 
