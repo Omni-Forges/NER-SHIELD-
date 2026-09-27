@@ -120,6 +120,15 @@ async def submit_incident_report(
     return IncidentReportResponse(status="received", **result)
 
 
+@app.get("/incidents")
+async def list_incidents(limit: int = 30):
+    """
+    Recent incident reports, newest first — used by the app's Incident
+    Details and Alerts & Notifications screens.
+    """
+    return await incident_service.list_incidents(limit=limit)
+
+
 @app.get("/incident-report/{incident_id}/nearest-road")
 async def get_nearest_road(incident_id: int, lat: float, lon: float):
     """

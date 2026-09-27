@@ -40,6 +40,42 @@ async def create_incident_report(
     }
 
 
+async def list_incidents(limit: int = 30) -> list[dict]:
+    """
+    Returns the most recent incident reports, newest first, with lat/lon
+    extracted from the stored PostGIS point. Used by the app's Incident
+    Details and Alerts & Notifications screens.
+    """
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT id, reporter_id, incident_type, description, photo_url,
+                   reported_at, verified,
+                   ST_Y(location) AS lat, ST_X(location) AS lon
+            FROM incident_reports
+            ORDER BY reported_at DESC
+            LIMIT $1
+            """,
+            limit,
+        )
+
+    return [
+        {
+            "id": r["id"],
+            "reporter_id": r["reporter_id"],
+            "incident_type": r["incident_type"],
+            "description": r["description"],
+            "photo_url": r["photo_url"],
+            "reported_at": r["reported_at"],
+            "verified": r["verified"],
+            "lat": r["lat"],
+            "lon": r["lon"],
+        }
+        for r in rows
+    ]
+
+
 async def find_nearest_road(lat: float, lon: float) -> dict | None:
     """
     Stage 2 — Processing: links an incident's location to the nearest known

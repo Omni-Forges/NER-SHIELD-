@@ -193,6 +193,26 @@
   }
   .empty-note{padding:20px 16px;color:var(--text-faint);font-size:12.5px;text-align:center;}
 
+  .delivery-item{padding:14px 16px;border-bottom:1px solid var(--border-soft);}
+  .delivery-item:last-child{border-bottom:none;}
+  .delivery-item .top-row{display:flex;justify-content:space-between;align-items:flex-start;}
+  .delivery-item .id{font-weight:700;font-size:13px;}
+  .delivery-item .cargo{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+  .delivery-status{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:10px;white-space:nowrap;}
+  .delivery-status.transit{background:var(--blue-dim);color:#8fc4ee;}
+  .delivery-status.delayed{background:#3d2f14;color:var(--amber);}
+  .delivery-status.ontrack{background:#123a2a;color:var(--green);}
+  .progress-track{height:5px;background:var(--card-2);border-radius:4px;margin:10px 0 4px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--blue);border-radius:4px;}
+  .delivery-item .stops{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-faint);}
+
+  .menu-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border-soft);cursor:pointer;font-size:13px;}
+  .menu-row:last-child{border-bottom:none;}
+  .menu-row:hover{background:var(--card-2);}
+  .menu-row svg{width:18px;height:18px;color:var(--text-faint);flex-shrink:0;}
+  .menu-row.danger{color:var(--red);}
+  .menu-row.danger svg{color:var(--red);}
+
   /* ---------- tools row ---------- */
   .tools-grid{
     display:grid;
@@ -294,8 +314,8 @@
     <button class="rail-btn" data-target="sec-map" title="Live Map">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
     </button>
-    <button class="rail-btn" data-target="sec-route" title="Route Optimization">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><path d="M8 18h5a4 4 0 0 0 4-4V9"/></svg>
+    <button class="rail-btn" data-target="sec-deliveries" title="Deliveries">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="13" height="10" rx="1.5"/><path d="M16 10h3l2 3v4h-5z"/><circle cx="7.5" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>
     </button>
     <button class="rail-btn" data-target="sec-report" title="Field Reporting">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
@@ -322,24 +342,24 @@
 
       <div class="stats-row">
         <div class="stat-card">
-          <div class="label">Road links monitored</div>
-          <div class="value" id="stat-roads">—</div>
-          <div class="foot" id="stat-roads-foot">&nbsp;</div>
+          <div class="label">Open</div>
+          <div class="value green" id="stat-open">—</div>
+          <div class="foot">Risk &lt; 30</div>
         </div>
         <div class="stat-card">
-          <div class="label">Towns connected</div>
-          <div class="value" id="stat-towns">—</div>
-          <div class="foot">Seeded NER network</div>
+          <div class="label">Degraded</div>
+          <div class="value amber" id="stat-degraded">—</div>
+          <div class="foot">Risk 30–60</div>
         </div>
         <div class="stat-card">
-          <div class="label">High-risk alerts</div>
+          <div class="label">High Risk</div>
           <div class="value red" id="stat-high">—</div>
-          <div class="foot">Risk score ≥ 60</div>
+          <div class="foot">Risk 60–85</div>
         </div>
         <div class="stat-card">
-          <div class="label">Avg network risk</div>
-          <div class="value amber" id="stat-avg">—</div>
-          <div class="foot">out of 100</div>
+          <div class="label">Closed</div>
+          <div class="value" id="stat-closed" style="color:#b53a33">—</div>
+          <div class="foot">Risk ≥ 85</div>
         </div>
       </div>
 
@@ -356,6 +376,16 @@
           </div>
           <div class="alerts-list" id="risk-list-2" style="max-height:none;"><div class="empty-note">Loading risk data…</div></div>
         </div>
+        <div class="panel" style="margin-top:14px;">
+          <div class="panel-head"><h2>Recent incidents</h2></div>
+          <div class="alerts-list" id="incident-list"><div class="empty-note">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- INCIDENT DETAILS (opened by tapping a row in Recent incidents) -->
+      <section class="section" id="sec-incident-detail">
+        <button class="secondary" style="width:auto;margin-bottom:12px;" onclick="setNavTarget('sec-overview')">← Back</button>
+        <div id="incident-detail-body"></div>
       </section>
 
       <!-- MAP -->
@@ -364,7 +394,10 @@
           <div class="panel">
             <div class="panel-head">
               <h2>Live risk map</h2>
-              <button class="secondary" id="btn-recalc" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;">Recalculate</button>
+              <div style="display:flex;gap:8px;">
+                <button class="secondary" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;" onclick="setNavTarget('sec-route')">Plan route</button>
+                <button class="secondary" id="btn-recalc" style="width:auto;margin:0;padding:6px 12px;font-size:11.5px;">Recalculate</button>
+              </div>
             </div>
             <div class="map-wrap">
               <div id="map"></div>
@@ -384,6 +417,7 @@
 
       <!-- ROUTE -->
       <section class="section" id="sec-route">
+        <button class="secondary" style="width:auto;margin-bottom:12px;" onclick="setNavTarget('sec-map')">← Back to map</button>
         <div class="panel">
           <div class="panel-head"><h2>Route optimization</h2></div>
           <div class="panel-body">
@@ -439,9 +473,55 @@
         </div>
       </section>
 
+      <!-- DELIVERIES (demo data — no delivery/dispatch table exists in the backend yet) -->
+      <section class="section" id="sec-deliveries">
+        <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px;">Demo data — not yet backed by a live dispatch system.</div>
+        <div class="panel">
+          <div class="panel-head"><h2>My deliveries</h2></div>
+          <div id="delivery-list"></div>
+        </div>
+      </section>
+
       <!-- MORE -->
       <section class="section" id="sec-more">
         <div class="panel" style="margin-bottom:14px;">
+          <div class="panel-body" style="display:flex;align-items:center;gap:12px;">
+            <div style="width:42px;height:42px;border-radius:50%;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-weight:700;">FO</div>
+            <div>
+              <div style="font-weight:700;font-size:13.5px;">Field Officer</div>
+              <div style="font-size:11.5px;color:var(--text-faint);">Field Team · Guest session</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:14px;">
+          <div class="menu-row" onclick="setNavTarget('sec-overview')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+            My Reports
+          </div>
+          <div class="menu-row" onclick="alert('Saved locations aren\'t wired to a backend yet — this build focuses on the live risk/route/report pipeline.')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.3"/></svg>
+            Saved Locations
+          </div>
+          <div class="menu-row" onclick="alert('Offline map caching isn\'t wired to a backend yet — this build focuses on the live risk/route/report pipeline.')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
+            Offline Maps
+          </div>
+          <div class="menu-row" onclick="document.getElementById('theme-toggle').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+            Settings — toggle theme
+          </div>
+          <div class="menu-row" onclick="alert('SIH 2026 · Team OMNI · NER-SHIELD prototype')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 17v-5M12 8h.01"/></svg>
+            Help &amp; Support
+          </div>
+          <div class="menu-row danger" onclick="document.getElementById('splash').style.display='flex'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+            Logout
+          </div>
+        </div>
+
+        <div class="panel">
           <div class="panel-head"><h2>Vehicle tracking</h2></div>
           <div class="panel-body">
             <label>Vehicle ID</label>
@@ -449,13 +529,6 @@
             <button id="btn-track" class="secondary">Load recent pings</button>
             <button id="btn-simulate-ping" class="secondary" style="margin-top:8px;">Simulate a ping (demo)</button>
             <div id="track-status"></div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-head"><h2>Profile</h2></div>
-          <div class="panel-body" style="font-size:12.5px;color:var(--text-dim);">
-            Field Officer · Guest session<br/>
-            <span style="color:var(--text-faint);">Login, saved locations and offline sync aren't wired to a backend yet — this build focuses on the live risk/route/report pipeline.</span>
           </div>
         </div>
       </section>
@@ -473,9 +546,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
       Map
     </button>
-    <button class="bn-btn" data-target="sec-route">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="6" r="2.3"/><path d="M8 18h5a4 4 0 0 0 4-4V9"/></svg>
-      Route
+    <button class="bn-btn" data-target="sec-deliveries">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="13" height="10" rx="1.5"/><path d="M16 10h3l2 3v4h-5z"/><circle cx="7.5" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>
+      Deliveries
     </button>
     <button class="bn-btn" data-target="sec-report">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
@@ -533,7 +606,9 @@ function setNavTarget(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === id));
   document.querySelectorAll('.rail-btn, .bn-btn').forEach(b => b.classList.toggle('active', b.dataset.target === id));
   if (id === 'sec-map') {
-    setTimeout(() => map.invalidateSize(), 150);
+    // container was hidden (display:none) until now, so Leaflet's last known
+    // size is stale (often 0x0) — force it to re-measure and redraw tiles.
+    setTimeout(() => map.invalidateSize(), 50);
   }
 }
 document.querySelectorAll('.rail-btn, .bn-btn').forEach(btn => {
@@ -552,6 +627,69 @@ function renderAlertItem(e) {
     </div>
     <span class="risk-badge" style="background:${color}">${Math.round(e.current_risk)}</span>`;
   return div;
+}
+
+function timeAgo(iso) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+}
+
+let incidentsCache = [];
+
+function renderIncidentItem(inc) {
+  const div = document.createElement('div');
+  div.className = 'alert-item';
+  div.style.cursor = 'pointer';
+  const color = riskColor(60); // incidents styled as high-risk red bar
+  div.innerHTML = `
+    <span class="bar" style="background:${color}"></span>
+    <div class="body">
+      <div class="route">${inc.incident_type.replace('_', ' ')}${inc.description ? ' — ' + inc.description : ''}</div>
+      <div class="meta">${timeAgo(inc.reported_at)} · ${inc.lat.toFixed(3)}, ${inc.lon.toFixed(3)}</div>
+    </div>`;
+  div.addEventListener('click', () => showIncidentDetail(inc.id));
+  return div;
+}
+
+function showIncidentDetail(id) {
+  const inc = incidentsCache.find(i => i.id === id);
+  const body = document.getElementById('incident-detail-body');
+  if (!inc) { body.innerHTML = '<div class="empty-note">Incident not found.</div>'; }
+  else {
+    body.innerHTML = `
+      <div class="panel">
+        ${inc.photo_url ? `<img src="${inc.photo_url}" style="width:100%;display:block;max-height:220px;object-fit:cover;" />` : ''}
+        <div class="panel-body">
+          <div style="font-weight:700;font-size:14px;text-transform:capitalize;">${inc.incident_type.replace('_',' ')}</div>
+          <div style="color:var(--text-faint);font-size:11.5px;margin-top:2px;">${inc.lat.toFixed(4)}, ${inc.lon.toFixed(4)}</div>
+          <div style="margin-top:12px;font-size:12.5px;color:var(--text-dim);line-height:1.6;">
+            <b>Reported by:</b> ${inc.reporter_id || 'Anonymous'}<br/>
+            <b>Reported at:</b> ${new Date(inc.reported_at).toLocaleString()}<br/>
+            <b>Verified:</b> ${inc.verified ? 'Yes' : 'Not yet verified'}
+          </div>
+          <div style="margin-top:12px;font-size:13px;">${inc.description || '—'}</div>
+        </div>
+      </div>`;
+  }
+  setNavTarget('sec-incident-detail');
+}
+
+async function loadIncidents() {
+  const list = document.getElementById('incident-list');
+  try {
+    const res = await fetch(`${API}/incidents`);
+    if (!res.ok) { list.innerHTML = '<div class="empty-note">Could not load incidents.</div>'; return; }
+    incidentsCache = await res.json();
+    list.innerHTML = '';
+    if (!incidentsCache.length) { list.innerHTML = '<div class="empty-note">No incidents reported yet.</div>'; return; }
+    incidentsCache.forEach(inc => list.appendChild(renderIncidentItem(inc)));
+  } catch (e) {
+    list.innerHTML = '<div class="empty-note">Could not load incidents.</div>';
+  }
 }
 
 async function loadNodesAndDraw() {
@@ -577,14 +715,16 @@ async function loadNodesAndDraw() {
     });
   }
 
-  // stats
-  const total = edges.length;
-  const high = edges.filter(e => e.current_risk >= 60).length;
-  const avg = total ? Math.round(edges.reduce((s, e) => s + e.current_risk, 0) / total) : 0;
-  document.getElementById('stat-roads').textContent = total;
+  // stats — bucketed to match Open / Degraded / High Risk / Closed
+  const open = edges.filter(e => e.current_risk < 30).length;
+  const degraded = edges.filter(e => e.current_risk >= 30 && e.current_risk < 60).length;
+  const high = edges.filter(e => e.current_risk >= 60 && e.current_risk < 85).length;
+  const closed = edges.filter(e => e.current_risk >= 85).length;
+  document.getElementById('stat-open').textContent = open;
+  document.getElementById('stat-degraded').textContent = degraded;
   document.getElementById('stat-high').textContent = high;
-  document.getElementById('stat-avg').textContent = avg;
-  document.getElementById('rail-alert-dot').classList.toggle('show', high > 0);
+  document.getElementById('stat-closed').textContent = closed;
+  document.getElementById('rail-alert-dot').classList.toggle('show', (high + closed) > 0);
 
   // draw edges on map if coordinates are known
   edges.forEach(e => {
@@ -604,8 +744,6 @@ async function loadNodesAndDraw() {
 async function loadGraphOnMap() {
   const nodesRes = await fetch(`${API}/nodes`);
   const nodeNames = nodesRes.ok ? await nodesRes.json() : [];
-
-  document.getElementById('stat-towns').textContent = nodeNames.length;
 
   const fromSel = document.getElementById('route-from');
   const toSel = document.getElementById('route-to');
@@ -674,6 +812,7 @@ document.getElementById('btn-incident').addEventListener('click', async () => {
   }
   status.textContent = `Report #${data.incident_id} saved. Risk engine re-ran automatically.`;
   await loadNodesAndDraw();
+  await loadIncidents();
 });
 
 document.getElementById('btn-weather').addEventListener('click', async () => {
@@ -734,6 +873,33 @@ document.getElementById('btn-simulate-ping').addEventListener('click', async () 
   status.textContent = res.ok ? 'Ping recorded. Click "Load recent pings" to see it.' : 'Error: ' + JSON.stringify(data.detail);
 });
 
+const MOCK_DELIVERIES = [
+  { id: 'DLV-1023', cargo: 'Medicines', route: 'Guwahati → Aizawl', eta: '12 hr 30 min', pct: 55, status: 'transit', label: 'In Transit' },
+  { id: 'DLV-1045', cargo: 'Food Supplies', route: 'Shillong → Imphal', eta: '6 hr 20 min', pct: 35, status: 'delayed', label: 'Delayed' },
+  { id: 'DLV-1067', cargo: 'Construction Material', route: 'Guwahati → Itanagar', eta: '1 day 4 hr', pct: 15, status: 'ontrack', label: 'On Track' },
+];
+
+function renderDeliveries() {
+  const container = document.getElementById('delivery-list');
+  container.innerHTML = '';
+  MOCK_DELIVERIES.forEach(d => {
+    const div = document.createElement('div');
+    div.className = 'delivery-item';
+    div.innerHTML = `
+      <div class="top-row">
+        <div>
+          <div class="id">${d.id}</div>
+          <div class="cargo">${d.cargo} · ${d.route}</div>
+        </div>
+        <span class="delivery-status ${d.status}">${d.label}</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${d.pct}%"></div></div>
+      <div class="stops"><span>Dispatched</span><span>ETA: ${d.eta}</span></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
 async function init() {
   const headerStatus = document.getElementById('header-status');
   try {
@@ -761,6 +927,8 @@ async function init() {
 
   await loadGraphOnMap();
   await loadNodesAndDraw();
+  await loadIncidents();
+  renderDeliveries();
 }
 
 init();
